@@ -1,0 +1,31 @@
+{
+  "name": "halfeld-petcare-agenda",
+  "version": "2.0.0",
+  "description": "Sistema de agendamento em tempo real para Halfeld PetCare com autenticação",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "agendamento",
+    "petcare",
+    "realtime"
+  ],
+  "author": "Halfeld PetCare",
+  "license": "ISC",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.17.3",
+    "helmet": "^7.1.0",
+    "pg": "^8.16.3",
+    "ws": "^8.14.2"
+  }
+}

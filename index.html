@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halfeld PetCare - Agenda</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <img src="logo-halfeld.png" alt="Halfeld PetCare" class="logo">
+            </div>
+
+            <!-- CONTAINER UNIDADE + CAIXA -->
+            <div
+                style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center; justify-content: center;">
+                <!-- Seletor de Unidade (Admin) -->
+                <div id="unidadeSelectorContainer" style="display: none;">
+                    <select id="unidadeSelector" class="date-input" style="min-width: 180px;">
+                        <option value="">Todas</option>
+                        <option value="1">📍 Unidade 01</option>
+                        <option value="2">📍 Unidade 02</option>
+                    </select>
+                </div>
+
+                <!-- Badge de Unidade (Usuário) -->
+                <div id="unidadeBadgeContainer" style="display: none;">
+                    <span id="unidadeBadge" class="unidade-badge"
+                        style="padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600;">📍 Unidade 01</span>
+                </div>
+
+                <!-- Botão Caixa (Movido para cá) -->
+                <button id="btnCaixa" class="btn-primary"
+                    style="display: none; width: 100%; justify-content: center; padding: 0.4rem 1rem; font-size: 0.9rem;">
+                    <span class="gradient-icon">🪙</span> Caixa
+                </button>
+            </div>
+
+            <!-- User Info e Botão Sair - Mobile: Linha 1, Desktop: dentro do header-controls -->
+            <div class="user-info">
+                <span id="userInfo" style="color: var(--text-secondary); margin-bottom: 0.25rem;">Carregando...</span>
+                <button onclick="fazerLogout()" class="btn-secondary" style="padding: 0.5rem 1rem;">Sair</button>
+            </div>
+
+            <div class="header-controls">
+                <!-- Stack: Date controls on top, Novo Agendamento below -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div class="date-selector">
+                        <button id="btnPrevDay" class="btn-icon">←</button>
+                        <input type="date" id="currentDate" class="date-input">
+                        <button id="btnNextDay" class="btn-icon">→</button>
+                        <button id="btnToday" class="btn-secondary">Hoje</button>
+                    </div>
+                    <button id="btnNovo" class="btn-primary"><span class="gradient-icon">📅</span> Novo
+                        Agendamento</button>
+                </div>
+
+                <!-- Stack: Catálogo on top, Clientes below -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button id="btnCatalogo" class="btn-primary"><span class="gradient-icon">📚</span> Catálogo</button>
+                    <button id="btnClientes" class="btn-primary"><span class="gradient-icon">👥</span> Clientes</button>
+                </div>
+
+                <!-- Stack: Usuários e Financeiro (apenas admin) -->
+                <div id="adminButtonsContainer" style="display: none; flex-direction: column; gap: 0.5rem;">
+                    <button id="btnUsuarios" class="btn-primary"><span class="gradient-icon">👥</span> Usuários</button>
+                    <!-- btnCaixa movido para junto do seletor -->
+                    <button id="btnFinanceiro" class="btn-gold"><span class="gradient-icon">📊</span>
+                        Gestão</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notifications -->
+    <div id="notifications" class="notifications"></div>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Navegação Mobile (100% invisível no desktop) -->
+        <div class="mobile-tabs">
+            <button class="mobile-tab active" data-tab="timeline">
+                <span class="gradient-icon">📅</span> Agenda
+            </button>
+            <button class="mobile-tab" data-tab="sidebar">
+                <span class="gradient-icon">📋</span> Lista
+            </button>
+            <button class="mobile-tab" data-tab="taxy" onclick="abrirModalTaxy()">
+                <span class="gradient-icon">🚗</span> Taxy
+            </button>
+            <button id="btnMobileCaixa" class="mobile-tab" onclick="abrirModalCaixa()" style="display: none;">
+                <span class="gradient-icon">🪙</span> Caixa
+            </button>
+        </div>
+
+        <!-- Timeline -->
+        <section class="timeline-section">
+            <div class="timeline-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h2><span class="gradient-icon">📅</span> Agenda do Dia</h2>
+                    <button class="btn-taxy-desktop" onclick="abrirModalTaxy()" title="Ver Taxys do Dia"
+                        style="background: linear-gradient(135deg, #FDB022 0%, #D97706 100%); color: white; border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(253, 176, 34, 0.3); transition: transform 0.2s;">
+                        🚗 Taxy
+                    </button>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color"
+                            style="background: linear-gradient(135deg, #FDB022 0%, #D97706 100%);"></div>
+                        <span>Com Taxi Dog</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color"
+                            style="background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);"></div>
+                        <span>Premium</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color"
+                            style="background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);"></div>
+                        <span>Padrão</span>
+                    </div>
+                </div>
+            </div>
+            <div id="timeline" class="timeline"></div>
+        </section>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="search-box">
+                <input type="text" id="searchPet" placeholder="Buscar Agendamento" class="search-input"
+                    autocomplete="off">
+            </div>
+            <div class="appointments-list">
+                <h3>Agendamentos</h3>
+                <div id="appointmentsList"></div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal - Novo/Editar Agendamento -->
+    <div id="modalAgendamento" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Novo Agendamento</h2>
+                <button class="btn-close" id="btnCloseModal">×</button>
+            </div>
+
+            <!-- Tabs Avulso/Assinatura -->
+            <div id="tabsAgendamento" class="tabs" style="padding: 1rem 1.5rem 0;">
+                <button class="tab-btn active" id="tabBtnAvulso" onclick="switchAgendamentoTab('avulso')">🛒
+                    Avulso</button>
+                <button class="tab-btn" id="tabBtnAssinatura" onclick="switchAgendamentoTab('assinatura')">📦
+                    Assinatura</button>
+            </div>
+
+            <!-- Tab Avulso (formulário existente) -->
+            <div id="tabAvulsoContent">
+                <form id="formAgendamento" class="modal-body">
+                    <div class="form-group">
+                        <label for="tutorBusca">Tutor (Cliente)</label>
+                        <input type="text" id="tutorBusca" class="form-input" autocomplete="off"
+                            placeholder="Digite o nome do tutor..." oninput="buscarTutores(this.value)">
+                        <input type="hidden" id="tutorId">
+                        <div id="tutorResultados" class="autocomplete-results" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group" id="petsSelecionados" style="display: none;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label style="margin-bottom: 0;">Pets do Tutor</label>
+                            <button type="button" class="btn-secondary" onclick="selecionarTodosPets()"
+                                style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                                ✓ Selecionar Todos
+                            </button>
+                        </div>
+                        <div id="listaPetsCheckbox" class="pets-checkbox-list"></div>
+                        <input type="hidden" id="petNome">
+                        <input type="hidden" id="petId">
+                    </div>
+
+                    <div id="petInfo" class="pet-info-preview"></div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="agendData">Data</label>
+                            <input type="date" id="agendData" required class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="agendHora">Horário</label>
+                            <input type="time" id="agendHora" required class="form-input" step="900">
+                        </div>
+                    </div>
+
+                    <!-- Repetidor Semanal -->
+                    <div class="form-group" id="repeaterSection">
+                        <label class="checkbox-label" style="margin-bottom: 0.75rem;">
+                            <input type="checkbox" id="repeaterEnabled" class="form-checkbox"
+                                onchange="toggleRepeater()">
+                            <span>🔄 Repetir semanalmente</span>
+                        </label>
+                        <div id="repeaterOptions" style="display: none; padding-left: 1.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                <span style="color: var(--text-secondary);">Repetir por</span>
+                                <select id="repeaterWeeks" class="form-input" style="width: auto; min-width: 80px;">
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4" selected>4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                                <span style="color: var(--text-secondary);">semanas</span>
+                                <span id="repeaterInfo"
+                                    style="color: var(--primary-purple); font-size: 0.85rem;"></span>
+                            </div>
+                            <div id="repeaterDates"
+                                style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="servicosSection">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label style="margin-bottom: 0;">Serviços</label>
+                            <label class="checkbox-label" style="font-size: 0.85rem; color: #10B981;">
+                                <input type="checkbox" id="servicosSemCusto" class="form-checkbox"
+                                    onchange="toggleSemCusto()">
+                                <span>💚 Sem Custo</span>
+                            </label>
+                        </div>
+                        <div id="servicosList" class="services-grid"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Valores dos Serviços (Editáveis)</label>
+                        <div id="valoresServicos" class="valores-container"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Serviços Extras</label>
+                        <div id="servicosExtras" class="servicos-extras-container">
+                            <!-- Serviços extras serão adicionados aqui dinamicamente -->
+                        </div>
+                        <button type="button" class="btn-secondary" id="btnAddServicoExtra">+ Adicionar Serviço
+                            Extra</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="taxiBuscar" class="form-checkbox">
+                            <span>🚗 Taxi Dog - Buscar</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="taxiLevar" class="form-checkbox">
+                            <span>🚗 Taxi Dog - Levar</span>
+                        </label>
+                        <label class="checkbox-label" style="margin-top: 0.5rem; font-size: 0.85rem; color: #10B981;">
+                            <input type="checkbox" id="taxiSemCusto" class="form-checkbox"
+                                onchange="calcularValorTotal()">
+                            <span>💚 Taxi Sem Custo</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Desconto</label>
+                        <div class="discount-container">
+                            <label class="checkbox-label" style="margin-bottom: 0.5rem;">
+                                <input type="checkbox" id="descontoPercentual" class="form-checkbox">
+                                <span>Aplicar desconto em percentual (%)</span>
+                            </label>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <input type="number" id="descontoValor" class="form-input" placeholder="0" min="0"
+                                    step="0.01" style="flex: 1;">
+                                <span id="descontoLabel" style="color: var(--text-secondary);">R$</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="valores-totais">
+                        <div class="valor-linha">
+                            <span>Subtotal:</span>
+                            <span id="valorSubtotal" class="valor-destaque">R$ 0,00</span>
+                        </div>
+                        <div class="valor-linha">
+                            <span>Desconto:</span>
+                            <span id="valorDesconto" style="color: #EF4444;">R$ 0,00</span>
+                        </div>
+                        <div class="valor-linha valor-total-linha">
+                            <span>Total:</span>
+                            <span id="valorTotal" class="valor-destaque-gold">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observacoes">Observações</label>
+                        <textarea id="observacoes" class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+                        <button type="button" class="btn-delete" id="btnExcluirAgendamento"
+                            style="display: none; margin-left: auto; margin-right: auto;">🗑️
+                            Excluir</button>
+                        <button type="submit" class="btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab Assinatura (conteúdo das assinaturas) -->
+            <div id="tabAssinaturaContent" style="display: none; padding: 1.5rem;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                    <button class="btn-primary"
+                        onclick="document.getElementById('modalAgendamento').classList.remove('active'); abrirModalNovaAssinatura();"
+                        style="padding: 0.75rem 1.5rem; font-size: 1rem; flex-shrink: 0;">
+                        ➕ Nova Assinatura
+                    </button>
+                    <input type="text" id="filtroAssinaturaTutor" placeholder="🔍 Filtrar por tutor..."
+                        oninput="filtrarAssinaturasAtivas()"
+                        style="flex: 1; min-width: 200px; padding: 0.75rem 1rem; border: 1px solid var(--border-color); 
+                               border-radius: 8px; background: var(--bg-input); color: var(--text-primary); font-size: 1rem;">
+                </div>
+
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+                <h3 style="margin-bottom: 1rem;">📦 Assinaturas Ativas</h3>
+                <div id="listaTodasAssinaturasModal" style="max-height: 400px; overflow-y: auto;">
+                    <p style="color: var(--text-secondary); text-align: center;">Carregando assinaturas...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal - Catálogo de Serviços -->
+    <div id="modalCatalogo" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📚 Catálogo de Serviços</h2>
+                <button class="btn-close" id="btnCloseCatalogo">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="catalog-controls">
+                    <button id="btnEditMode" class="btn-secondary">✏️ Modo Edição</button>
+                    <input type="text" id="searchCatalogo" placeholder="Buscar serviço..." class="search-input">
+                </div>
+                <div id="catalogoContent" class="catalogo-content"></div>
+
+                <!-- Mini Modal Adicionar Serviço -->
+                <div id="miniModalAddServico" class="mini-modal" style="display: none;">
+                    <div class="mini-modal-content">
+                        <h4 id="miniModalTitle">Adicionar Serviço</h4>
+                        <div class="mini-modal-body">
+                            <div class="form-group">
+                                <label>Nome do Serviço:</label>
+                                <input type="text" id="novoServicoNome" class="form-input"
+                                    placeholder="Ex: Banho Premium - Porte Mini">
+                            </div>
+                            <div class="form-group">
+                                <label>Preço (R$):</label>
+                                <input type="number" id="novoServicoPreco" class="form-input" placeholder="0.00"
+                                    step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Duração (minutos):</label>
+                                <input type="number" id="novoServicoDuracao" class="form-input" placeholder="60"
+                                    min="1">
+                            </div>
+                        </div>
+                        <div class="mini-modal-footer">
+                            <button class="btn-secondary" onclick="fecharMiniModal()">Cancelar</button>
+                            <button class="btn-primary" onclick="salvarNovoServico()">Adicionar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal - Gestão -->
+    <div id="modalFinanceiro" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📊 Gestão</h2>
+                <button class="btn-close" id="btnCloseFinanceiro">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Tabs de Gestão (Financeiro/Clientes) -->
+                <div id="tabsGestao" class="tabs" style="margin-bottom: 1.5rem;">
+                    <button class="tab-btn active" id="tabBtnFinanceiro" onclick="switchGestaoTab('financeiro')">💰
+                        Financeiro</button>
+                    <button class="tab-btn" id="tabBtnClientes" onclick="switchGestaoTab('clientes')">📊
+                        Clientes</button>
+                </div>
+
+                <!-- Conteúdo Financeiro -->
+                <div id="financeiroContent" class="financeiro-content">
+                    <!-- Controles em linha horizontal -->
+                    <div class="financeiro-header-controls">
+                        <div class="control-group">
+                            <label for="financeiroUnidade">📊 Visualização:</label>
+                            <select id="financeiroUnidade" class="select-financeiro">
+                                <option value="">Consolidado</option>
+                                <option value="1">Unidade 01</option>
+                                <option value="2">Unidade 02</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="financeiroTipo">📅 Período:</label>
+                            <select id="financeiroTipo" class="select-financeiro">
+                                <option value="diario">Diário</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group date-controls">
+                            <button id="btnFinanceiroPrevDay" class="btn-icon">←</button>
+                            <input type="date" id="financeiroData" class="date-input">
+                            <button id="btnFinanceiroNextDay" class="btn-icon">→</button>
+                            <button id="btnFinanceiroToday" class="btn-secondary btn-small">Hoje</button>
+                            <select id="financeiroMes" class="date-input" style="display: none;">
+                                <option value="1">Janeiro</option>
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                            <input type="number" id="financeiroAno" class="date-input"
+                                style="display: none; width: 100px;" placeholder="2025">
+                            <input type="number" id="financeiroAnoAnual" class="date-input"
+                                style="display: none; width: 100px;" placeholder="2025">
+                        </div>
+
+                        <div class="control-group" id="exportButtonContainer" style="display: none;">
+                            <button id="btnExportarExcel" class="btn-gold">
+                                📊 Exportar Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="resumo-financeiro">
+                        <div class="resumo-card">
+                            <div class="resumo-label">Faturamento Total</div>
+                            <div class="resumo-valor" id="faturamentoTotal">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card resumo-pago">
+                            <div class="resumo-label">✅ Total Pago</div>
+                            <div class="resumo-valor resumo-valor-pago" id="faturamentoPago">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card resumo-devedor">
+                            <div class="resumo-label">⏳ A Receber</div>
+                            <div class="resumo-valor resumo-valor-devedor" id="faturamentoDevedor">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card" style="border-left: 3px solid #EC4899;">
+                            <div class="resumo-label">🚗 TaxyDog</div>
+                            <div class="resumo-valor" id="faturamentoTaxi">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card">
+                            <div class="resumo-label">Serviços</div>
+                            <div class="resumo-valor" id="faturamentoServicos">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card">
+                            <div class="resumo-label">Total de Agendamentos</div>
+                            <div class="resumo-valor" id="totalAgendamentos">0</div>
+                        </div>
+
+                        <!-- Cards extras para visão Mensal/Anual -->
+                        <div id="statsExtras" style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- Cards de Origem e Pagamento (Mensal/Anual) -->
+                    <div id="statsOrigemPagamento" class="resumo-financeiro" style="display: none; margin-top: 1rem;">
+                        <div class="resumo-card" style="border-left: 3px solid #7C3AED;">
+                            <div class="resumo-label">📦 Pacotes</div>
+                            <div class="resumo-valor" id="faturamentoPacotes">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card" style="border-left: 3px solid #3B82F6;">
+                            <div class="resumo-label">🛒 Avulso</div>
+                            <div class="resumo-valor" id="faturamentoAvulso">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card" style="border-left: 3px solid #10B981;">
+                            <div class="resumo-label">💵 Dinheiro</div>
+                            <div class="resumo-valor" id="faturamentoDinheiro">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card" style="border-left: 3px solid #3B82F6;">
+                            <div class="resumo-label">📱 PIX</div>
+                            <div class="resumo-valor" id="faturamentoPix">R$ 0,00</div>
+                        </div>
+                        <div class="resumo-card" style="border-left: 3px solid #8B5CF6;">
+                            <div class="resumo-label">💳 Cartão</div>
+                            <div class="resumo-valor" id="faturamentoCartao">R$ 0,00</div>
+                        </div>
+                    </div>
+
+                    <div class="relatorio-detalhado">
+                        <h3>Detalhamento</h3>
+                        <div id="relatorioLista" class="relatorio-lista"></div>
+                    </div>
+                </div>
+
+                <!-- Tab Clientes (Lembretes) - Gerente+ -->
+                <div id="tabClientes" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0;">📋 Lembretes e Alertas</h3>
+                        <button class="btn-secondary" onclick="abrirEditorTemplates()" style="font-size: 0.9rem;">
+                            📝 Editar Templates
+                        </button>
+                    </div>
+                    <div id="listaClientesInativos" style="max-height: 60vh; overflow-y: auto;">
+                        <p style="text-align: center; color: var(--text-secondary);">Carregando lembretes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestão de Clientes -->
+    <div id="modalClientes" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="modalClientesTitle">👥 Gestão de Clientes</h2>
+                <button class="btn-close" onclick="fecharModalClientes()">×</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="cadastrar">Cadastrar Novo</button>
+                <button class="tab-btn" data-tab="buscar">Lista de Clientes / Buscar</button>
+                <button class="tab-btn" data-tab="lembretes">Lembretes</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tab: Cadastrar Novo -->
+                <div id="tab-cadastrar" class="tab-content active">
+                    <form id="formCliente" onsubmit="salvarCliente(event)">
+                        <!-- Seção Tutor -->
+                        <section class="form-section">
+                            <h3>👤 Dados do Tutor</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="tutorNome">Nome Completo *</label>
+                                    <input type="text" id="tutorNome" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="tutorTelefone">Telefone *</label>
+                                    <input type="tel" id="tutorTelefone" placeholder="(11) 99999-9999" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="tutorEndereco">Endereço</label>
+                                    <input type="text" id="tutorEndereco" placeholder="Rua, número, bairro">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="tutorObservacoes">Observações</label>
+                                    <textarea id="tutorObservacoes" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Seção Pets -->
+                        <section class="form-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>🐾 Pets</h3>
+                                <button type="button" class="btn-secondary" onclick="adicionarPet()">+ Adicionar
+                                    Pet</button>
+                            </div>
+                            <div id="petsContainer"></div>
+                        </section>
+
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary"
+                                onclick="fecharModalClientes()">Cancelar</button>
+                            <button type="submit" class="btn-primary">Salvar Cliente</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab: Buscar -->
+                <div id="tab-buscar" class="tab-content">
+                    <div class="search-section">
+                        <input type="text" id="buscaClientes"
+                            placeholder="🔍 Buscar por nome do tutor, pet ou telefone..." class="search-input">
+                    </div>
+
+                    <div id="excelControls"
+                        style="display: none; margin-bottom: 1rem; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                        <input type="file" id="fileImportExcel" accept=".xlsx, .xls" style="display: none;"
+                            onchange="importarClientesExcel(this)">
+                        <button type="button" class="btn-secondary btn-small"
+                            onclick="document.getElementById('fileImportExcel').click()"
+                            style="display: flex; align-items: center; gap: 0.3rem;">
+                            📥 Importar Excel
+                        </button>
+                        <button type="button" class="btn-gold btn-small" onclick="exportarClientesExcel()"
+                            style="display: flex; align-items: center; gap: 0.3rem;">
+                            📊 Exportar Excel
+                        </button>
+                    </div>
+                    <div id="resultadosBusca" class="clientes-list"></div>
+                </div>
+
+                <!-- Tab: Lembretes -->
+                <div id="tab-lembretes" class="tab-content">
+                    <div id="lembretesLista" class="lembretes-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Usuários (apenas admin) -->
+    <div id="modalUsuarios" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>👥 Gerenciamento de Usuários</h2>
+                <button class="btn-close" onclick="fecharModalUsuarios()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="usuario-form-section">
+                    <h4>Criar Novo Usuário</h4>
+                    <form id="formNovoUsuario" onsubmit="event.preventDefault(); criarNovoUsuario();">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nome Completo *</label>
+                                <input type="text" name="nomeCompleto" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nome de Usuário *</label>
+                                <input type="text" name="username" class="form-input" required>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Senha *</label>
+                                <input type="password" name="password" class="form-input" minlength="6" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Confirmar Senha *</label>
+                                <input type="password" name="confirmarSenha" class="form-input" minlength="6" required>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Função/Cargo *</label>
+                                <select name="funcao" class="form-input" onchange="sugerirRole()" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="CEO">CEO</option>
+                                    <option value="Admin">Admin</option>
+                                    <option value="Gerente">Gerente</option>
+                                    <option value="Tosador">Tosador</option>
+                                    <option value="Banhista">Banhista</option>
+                                    <option value="Operação">Operação</option>
+                                    <option value="Taxy">Taxy</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Acesso *</label>
+                                <select name="role" class="form-input" onchange="toggleCampoUnidade()" required>
+                                    <option value="operacao">Operação (visualização apenas)</option>
+                                    <option value="gerente">Gerente (sem acesso financeiro)</option>
+                                    <option value="admin">Administrador (acesso total)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group" id="unidadeContainer">
+                                <label>Unidade *</label>
+                                <select name="unidadeId" class="form-input" required>
+                                    <option value="">Selecione a unidade</option>
+                                    <option value="1">Unidade 01</option>
+                                    <option value="2">Unidade 02</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Criar Usuário</button>
+                    </form>
+                </div>
+                <hr style="margin: 2rem 0; border: 1px solid var(--border-color);">
+                <div class="usuario-list-section">
+                    <h4>Usuários Cadastrados</h4>
+                    <div id="usuariosLista" class="usuarios-lista">
+                        <p style="text-align: center; color: var(--text-secondary);">Carregando...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Popup de Seleção de Forma de Pagamento -->
+    <div id="formaPopupContainer" class="forma-popup-overlay" style="display: none;"></div>
+
+    <!-- Modal Taxy Schedule -->
+    <div id="modalTaxy" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="taxy-header-title">
+                    <span class="taxy-icon">🚗</span>
+                    <span class="taxy-text-desktop">Taxy do Dia</span>
+                    <span class="taxy-text-mobile">Taxy</span>
+                </h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="btn-primary" onclick="copiarTaxys()"
+                        style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                        📋 Copiar Tudo
+                    </button>
+                    <button class="btn-close" onclick="fecharModalTaxy()">×</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="taxyLista" style="max-height: 60vh; overflow-y: auto;">
+                    <p style="text-align: center; color: var(--text-secondary);">
+                        Carregando...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Caixa -->
+    <div id="modalCaixa" class="modal">
+        <div class="modal-content modal-large" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>🪙 Controle de Caixa</h2>
+                <button class="btn-close" onclick="fecharModalCaixa()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="caixa-resumo">
+                    <div class="caixa-saldo-card">
+                        <h3>Saldo Atual</h3>
+                        <div id="caixaSaldoValor" class="saldo-valor">R$ 0,00</div>
+                    </div>
+                    <div class="caixa-actions">
+                        <button class="btn-primary" onclick="abrirModalTransacao('entrada')">
+                            ➕ Adicionar
+                        </button>
+                        <button class="btn-secondary" onclick="abrirModalTransacao('saida')"
+                            style="background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%); color: white; border: none;">
+                            ➖ Retirar
+                        </button>
+                        <button class="btn-secondary" onclick="confirmarZerarCaixa()">
+                            🔄 Fechamento
+                        </button>
+                        <button class="btn-copy-address" onclick="confirmarLimparHistorico()"
+                            title="Limpar todo o histórico (Admin)" style="font-size: 0.9rem;">
+                            🗑️ Limpar Histórico
+                        </button>
+                    </div>
+                </div>
+
+                <div class="caixa-extrato-section">
+                    <h3>Últimas Movimentações</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Valor</th>
+                                    <th>Usuário</th>
+                                </tr>
+                            </thead>
+                            <tbody id="caixaExtratoLista">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini Modal Nova Transação Caixa -->
+    <div id="modalNovaTransacaoCaixa" class="mini-modal" style="display: none;">
+        <div class="mini-modal-content">
+            <h4 id="modalTransacaoTitle">Nova Transação</h4>
+            <div class="mini-modal-body">
+                <div class="form-group">
+                    <label>Valor (R$):</label>
+                    <input type="number" id="transacaoValor" class="form-input" step="0.01" min="0" placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label>Descrição/Motivo:</label>
+                    <input type="text" id="transacaoDescricao" class="form-input"
+                        placeholder="Ex: Troco inicial, Compra de material...">
+                </div>
+            </div>
+            <div class="mini-modal-footer">
+                <button class="btn-secondary" onclick="fecharModalTransacao()">Cancelar</button>
+                <button class="btn-primary" onclick="salvarTransacaoCaixa()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biblioteca para exportação Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Dependências: Funções utilitárias compartilhadas (obterDataHoje, formatarMoeda, etc) -->
+    <script src="data.js"></script>
+    <!-- Dependências: Gestão de clientes (usa fetchComAuth de app.js) -->
+    <script src="clientes.js"></script>
+    <!-- Dependências: Gestão de usuários -->
+    <script src="usuarios.js"></script>
+    <!-- Dependências: Taxy Schedule -->
+    <script src="taxy.js"></script>
+    <!-- Dependências: Tabs e navegação do financeiro -->
+    <script src="financeiro-tabs.js"></script>
+    <script src="caixa.js"></script>
+    <!-- Script principal: Inicialização, autenticação e lógica core -->
+    <script src="pacotes.js"></script>
+    <script src="gestao.js"></script>
+    <script src="app.js"></script>
+
+    <!-- Modal: Controle de Assinaturas -->
+    <div id="modalControleAssinaturas" class="modal">
+        <div class="modal-content" style="max-width: 1200px;">
+            <div class="modal-header">
+                <h2>📦 Controle de Assinaturas</h2>
+                <button class="btn-close" onclick="fecharModalGestaoAssinaturas()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Search bar + Nova Assinatura button -->
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px; position: relative;">
+                        <input type="text" id="buscaAssinaturas" class="form-input"
+                            placeholder="🔍 Buscar Tutor ou Pet..." oninput="filtrarAssinaturasAtivas()"
+                            style="width: 100%; padding-right: 30px;">
+                        <button
+                            onclick="document.getElementById('buscaAssinaturas').value=''; filtrarAssinaturasAtivas();"
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                            ×
+                        </button>
+                    </div>
+                    <button class="btn-primary" onclick="abrirModalNovaAssinatura()" style="white-space: nowrap;">
+                        ➕ Nova Assinatura
+                    </button>
+                </div>
+                <div id="listaTodasAssinaturasModal"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nova Assinatura -->
+    <div id="modalNovaAssinatura" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 id="tituloAssinatura">➕ Nova Assinatura</h2>
+                <button class="btn-close" onclick="fecharModalNovaAssinatura()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovaAssinatura" onsubmit="event.preventDefault(); salvarAssinatura();">
+                    <input type="hidden" id="assinaturaId">
+
+                    <div class="form-group">
+                        <label>Cliente *</label>
+                        <input type="text" id="assinaturaBuscaCliente" class="form-input"
+                            placeholder="Buscar cliente..." oninput="buscarClienteAssinatura(this.value)"
+                            autocomplete="off" required>
+                        <div id="assinaturaClienteSugestoes" class="autocomplete-suggestions" style="display:none;">
+                        </div>
+                        <input type="hidden" id="assinaturaClienteId">
+                        <div id="assinaturaClienteInfo"
+                            style="margin-top:0.5rem; color: var(--primary-purple); font-weight: 500;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nome do Plano *</label>
+                        <input type="text" id="assinaturaNomePlano" class="form-input"
+                            placeholder="Ex: Banho Mensal, Tosa Quinzenal..." required>
+                        <small style="color: var(--text-secondary);">Nome completo: "Plano - Cliente"</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Créditos *</label>
+                            <input type="number" id="assinaturaCreditos" class="form-input" min="1" value="4" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor (R$) *</label>
+                            <input type="number" id="assinaturaValor" class="form-input" min="0" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea id="assinaturaObs" class="form-textarea" rows="3"
+                            placeholder="Observações..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🚗 Taxi Dog</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="assinaturaTaxiBuscar" class="form-checkbox">
+                            <span>🚗 Taxi Dog - Buscar</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="assinaturaTaxiLevar" class="form-checkbox">
+                            <span>🚗 Taxi Dog - Levar</span>
+                        </label>
+                        <label class="checkbox-label" style="margin-top: 0.5rem; font-size: 0.85rem; color: #10B981;">
+                            <input type="checkbox" id="assinaturaTaxiSemCusto" class="form-checkbox">
+                            <span>💚 Taxi Sem Custo</span>
+                        </label>
+                    </div>
+
+
+                    <div class="modal-footer"
+                        style="margin-top: 1.5rem; display: flex; justify-content: space-between; gap: 1rem;">
+                        <button type="button" class="btn-secondary" onclick="fecharModalNovaAssinatura()"
+                            style="flex: 1; padding: 1rem; font-size: 1.1rem;">Cancelar</button>
+                        <button type="submit" class="btn-primary"
+                            style="flex: 1; padding: 1rem; font-size: 1.1rem;">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+
+</body>
+
+</html>

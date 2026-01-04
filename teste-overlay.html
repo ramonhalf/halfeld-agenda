@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Overlay</title>
+    <style>
+        body { margin: 20px; }
+        button { padding: 20px; font-size: 16px; cursor: pointer; }
+        .resultado { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Overlay Invisível</h1>
+    <button onclick="testarClique()">CLIQUE AQUI PARA TESTAR</button>
+    <div class="resultado" id="resultado">Aguardando clique...</div>
+    
+    <script>
+        function testarClique() {
+            document.getElementById('resultado').innerHTML = '✅ CLIQUE FUNCIONOU! Sem overlay bloqueando.';
+            document.getElementById('resultado').style.background = '#90EE90';
+        }
+        
+        // Verificar elementos com z-index alto
+        window.addEventListener('load', () => {
+            const elementos = document.querySelectorAll('*');
+            const elementosComZIndex = [];
+            
+            elementos.forEach(el => {
+                const zIndex = window.getComputedStyle(el).zIndex;
+                if (zIndex !== 'auto' && parseInt(zIndex) > 100) {
+                    elementosComZIndex.push({
+                        elemento: el.tagName + (el.id ? '#' + el.id : '') + (el.className ? '.' + el.className : ''),
+                        zIndex: zIndex,
+                        display: window.getComputedStyle(el).display,
+                        visibility: window.getComputedStyle(el).visibility
+                    });
+                }
+            });
+            
+            console.log('Elementos com z-index > 100:', elementosComZIndex);
+        });
+    </script>
+</body>
+</html>

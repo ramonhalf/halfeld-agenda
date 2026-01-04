@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Halfeld PetCare</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="logo-halfeld.png" alt="Halfeld PetCare">
+            </div>
+
+            <h1 class="login-title">Sistema de Agendamento</h1>
+            <p class="login-subtitle">Faça login para continuar</p>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" required autocomplete="username"
+                        placeholder="Digite seu usuário">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password"
+                        placeholder="Digite sua senha">
+                </div>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+                <button type="submit" class="login-button">
+                    <span id="buttonText">Entrar</span>
+                    <span id="buttonSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+
+            <!-- Footer removed -->
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const buttonText = document.getElementById('buttonText');
+        const buttonSpinner = document.getElementById('buttonSpinner');
+
+        // Detectar URL da API dinamicamente
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3000/api'
+            : `${window.location.origin}/api`;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Mostrar loading
+            buttonText.style.display = 'none';
+            buttonSpinner.style.display = 'inline-block';
+            errorMessage.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Login bem-sucedido, redirecionar para página principal
+                    window.location.href = '/';
+                } else {
+                    // Mostrar erro
+                    errorMessage.textContent = data.error || 'Erro ao fazer login';
+                    errorMessage.style.display = 'block';
+                    buttonText.style.display = 'inline';
+                    buttonSpinner.style.display = 'none';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Erro de conexão com o servidor';
+                errorMessage.style.display = 'block';
+                buttonText.style.display = 'inline';
+                buttonSpinner.style.display = 'none';
+            }
+        });
+
+        // Focar no campo de usuário ao carregar
+        document.getElementById('username').focus();
+    </script>
+</body>
+
+</html>
